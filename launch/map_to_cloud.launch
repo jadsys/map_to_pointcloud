@@ -1,0 +1,29 @@
+<launch>
+    <!-- Arguments -->
+    <arg name="TARGET_MAP_FILE" default="/home/ros/maps/reference_map.yaml"/>
+    <arg name="TARGET_MAP_TOPIC" default="/reference_map"/>
+    <arg name="TARGET_MAP_CLOUD_TOPIC" default="/target_cloud"/>
+    <arg name="USE_MAP_SERVER" default="true" />
+    <arg name="USE_CLOUD_VIEWER" default="true" />
+
+    <!-- Map server -->
+    <group if="$(arg USE_MAP_SERVER)">
+        <node pkg="map_server" name="map_server_target" type="map_server" args="$(arg TARGET_MAP_FILE)" output="screen">
+            <remap from="map" to="$(arg TARGET_MAP_TOPIC)" />
+            <param name="frame_id" value="map" />
+        </node>
+    </group>
+
+    <!-- Map to cloud -->
+    <node pkg="map_to_pointcloud" name="map_to_cloud_target" type="map_to_pointcloud_node"  output="screen">
+        <rosparam file="$(find map_to_pointcloud)/param/map_to_pointcloud.yaml" command="load" />
+        <param name="global_frame" value="map" />
+        <param name="map_topic_name" value="/$(arg TARGET_MAP_TOPIC)" />
+        <param name="cloud_topic_name" value="/$(arg TARGET_MAP_CLOUD_TOPIC)" />
+    </node>
+
+    <!-- rviz(視覚化ツール) -->
+    <group if="$(arg USE_CLOUD_VIEWER)">
+        <node pkg="rviz" type="rviz" args="-d '$(find map_to_pointcloud)/rviz/result_cloud_view.rviz'" name="map_to_cloud_rviz" respawn="true" />
+    </group>
+</launch>
